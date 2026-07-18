@@ -29,9 +29,6 @@
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --transition: 0.2s ease;
             --safe-bottom: env(safe-area-inset-bottom, 16px);
-            --priority-low: #22c55e;
-            --priority-mid: #eab308;
-            --priority-high: #ef4444;
             --link-color: #2563eb;
         }
 
@@ -62,7 +59,7 @@
             -webkit-user-select: none;
         }
 
-        /* Header */
+        /* Заголовок */
         .header {
             position: sticky;
             top: 0;
@@ -158,7 +155,7 @@
             font-weight: 500;
         }
 
-        /* Main list */
+        /* Основной список */
         .main-container {
             flex: 1;
             padding: 12px 12px 20px;
@@ -202,7 +199,7 @@
             align-items: center;
         }
 
-        /* Card */
+        /* Карточка задачи */
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
@@ -298,14 +295,14 @@
             font-weight: 400;
             font-style: italic;
         }
+        /* Комментарий со ссылками: показываются как https://... */
         .card-comment {
             font-size: 0.8rem;
             color: var(--text-secondary);
             line-height: 1.45;
             word-break: break-word;
-            /* Увеличиваем максимальное количество строк до 4, чтобы были видны несколько ссылок */
             display: -webkit-box;
-            -webkit-line-clamp: 4;
+            -webkit-line-clamp: 5;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -314,7 +311,8 @@
             text-decoration: underline;
             pointer-events: auto;
             font-weight: 500;
-            word-break: break-all;
+            /* Ссылка выглядит как https://... и не разрывается */
+            white-space: nowrap;
         }
         .card-comment a:active {
             color: #1d4ed8;
@@ -326,7 +324,7 @@
             align-items: center;
         }
 
-        /* FAB */
+        /* Кнопка добавления */
         .fab {
             position: fixed;
             bottom: calc(20px + var(--safe-bottom));
@@ -357,7 +355,7 @@
             transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Bottom selection bar */
+        /* Панель выделения */
         .selection-bar {
             position: fixed;
             bottom: 0;
@@ -400,7 +398,7 @@
             font-size: 0.9rem;
         }
 
-        /* Modal overlay */
+        /* Модальное окно */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -491,7 +489,7 @@
             min-width: 100px;
         }
 
-        /* Toast */
+        /* Уведомление */
         .toast {
             position: fixed;
             top: 16px;
@@ -512,7 +510,7 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* Delete confirmation mini-modal */
+        /* Подтверждение удаления */
         .confirm-overlay {
             position: fixed;
             inset: 0;
@@ -547,7 +545,7 @@
             margin: 0 4px;
         }
 
-        /* Responsive */
+        /* Адаптивность */
         @media (min-width: 600px) {
             .main-container {
                 padding: 16px 16px 24px;
@@ -585,7 +583,7 @@
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Шапка -->
     <header class="header">
         <div class="header-title">
             <span class="icon">🏗️</span> Ремонт
@@ -600,7 +598,7 @@
         </div>
     </header>
 
-    <!-- Main list -->
+    <!-- Список задач -->
     <div class="main-container" id="listContainer">
         <div class="empty-state" id="emptyState">
             <span class="emoji">🛠️</span>
@@ -613,10 +611,10 @@
         </div>
     </div>
 
-    <!-- FAB -->
+    <!-- Кнопка добавления -->
     <button class="fab" id="fabAdd" title="Добавить пункт">+</button>
 
-    <!-- Selection bar -->
+    <!-- Панель выделения -->
     <div class="selection-bar" id="selectionBar">
         <div class="selection-bar-info">
             <span class="selection-bar-count" id="selCount">Выбрано: 0</span>
@@ -625,7 +623,7 @@
         <button class="btn btn-outline btn-sm" id="btnClearSelection">✕ Сбросить</button>
     </div>
 
-    <!-- Modal -->
+    <!-- Модальное окно -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal" id="modal">
             <h2 id="modalTitle">Добавить пункт</h2>
@@ -646,8 +644,11 @@
                 </div>
                 <div class="form-group">
                     <label for="itemComment">Комментарий (цвета, ссылки на магазины и т.д.)</label>
-                    <textarea id="itemComment" placeholder="Например: Нужен светло-серый оттенок. Ссылка: https://example.com/краска" maxlength="2000"></textarea>
-                    <span class="hint">Ссылки (https://...) будут кликабельны и сокращены для экономии места. Можно вставлять несколько ссылок — каждая будет видна.</span>
+                    <textarea id="itemComment" placeholder="Например: 160х200х150
+2500р- https://example.com/товар1
+3500р- https://example.com/товар2
+https://example.com/товар3" maxlength="2000"></textarea>
+                    <span class="hint">Ссылки будут показываться как https://... , но останутся кликабельными.</span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Сохранить</button>
@@ -657,7 +658,7 @@
         </div>
     </div>
 
-    <!-- Delete confirmation -->
+    <!-- Подтверждение удаления -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-dialog">
             <p>Удалить этот пункт?</p>
@@ -666,13 +667,13 @@
         </div>
     </div>
 
-    <!-- Toast -->
+    <!-- Уведомление -->
     <div class="toast" id="toast"></div>
 
     <script>
         (function() {
             // ──────────────────────────────────────
-            // DOM elements
+            // DOM-элементы
             // ──────────────────────────────────────
             const listContainer = document.getElementById('listContainer');
             const emptyState = document.getElementById('emptyState');
@@ -699,7 +700,7 @@
             const toast = document.getElementById('toast');
 
             // ──────────────────────────────────────
-            // State
+            // Состояние приложения
             // ──────────────────────────────────────
             const STORAGE_KEY = 'renovation_planner_items';
             let items = [];
@@ -707,10 +708,10 @@
             let selectionMode = false;
             let editingId = null;
             let pendingDeleteId = null;
-            let sortDesc = true; // true = high priority first
+            let sortDesc = true;
 
             // ──────────────────────────────────────
-            // Persistence
+            // Работа с localStorage
             // ──────────────────────────────────────
             function loadItems() {
                 try {
@@ -731,7 +732,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('Failed to load items:', e);
+                    console.warn('Ошибка загрузки данных:', e);
                 }
                 items = [];
             }
@@ -754,7 +755,7 @@
             }
 
             // ──────────────────────────────────────
-            // Sorting
+            // Сортировка
             // ──────────────────────────────────────
             function getSortedItems() {
                 const arr = [...items];
@@ -767,12 +768,11 @@
             }
 
             // ──────────────────────────────────────
-            // Price parsing & formatting
+            // Парсинг и форматирование цены
             // ──────────────────────────────────────
             function parsePriceInput(raw) {
                 const trimmed = String(raw || '').trim().replace(/\s+/g, '');
                 if (!trimmed) return { min: null, max: null };
-                // Check for range: "10000-20000" or "10000 - 20000"
                 const rangeMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)$/);
                 if (rangeMatch) {
                     const min = parseFloat(rangeMatch[1]);
@@ -782,7 +782,6 @@
                     }
                     return { min: null, max: null };
                 }
-                // Single price
                 const single = parseFloat(trimmed);
                 if (!isNaN(single) && single >= 0) {
                     return { min: single, max: single };
@@ -819,71 +818,58 @@
             }
 
             // ──────────────────────────────────────
-            // Priority color
+            // Цвет приоритета
             // ──────────────────────────────────────
             function getPriorityColor(priority) {
-                const t = (priority - 1) / 9; // 0 to 1
+                const t = (priority - 1) / 9;
                 const clamped = Math.max(0, Math.min(1, t));
                 let hue;
                 if (clamped <= 0.5) {
-                    hue = 120 - clamped * 2 * 60; // 120 → 60
+                    hue = 120 - clamped * 2 * 60;
                 } else {
-                    hue = 60 - (clamped - 0.5) * 2 * 60; // 60 → 0
+                    hue = 60 - (clamped - 0.5) * 2 * 60;
                 }
-                const saturation = 75;
-                const lightness = 45;
-                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                return `hsl(${hue}, 75%, 45%)`;
             }
 
             // ──────────────────────────────────────
-            // URL truncation for display
+            // Отображение ссылки как https://...
             // ──────────────────────────────────────
-            function truncateUrl(url) {
-                // Remove protocol
-                let display = url.replace(/^https?:\/\//, '');
-                // Remove www.
-                display = display.replace(/^www\./, '');
-                // If still too long, truncate with ellipsis
-                const MAX_LEN = 28;
-                if (display.length > MAX_LEN) {
-                    display = display.substring(0, MAX_LEN - 3) + '...';
-                }
-                return display;
+            function formatLinkDisplay(url) {
+                // Всегда показываем только "https://..."
+                return 'https://...';
             }
 
             // ──────────────────────────────────────
-            // Comment formatting: newlines + clickable truncated links
+            // Форматирование комментария
             // ──────────────────────────────────────
             function formatComment(text) {
                 if (!text) return '';
-                // Escape HTML
                 let escaped = text
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;');
 
-                // Convert newlines to <br> for line breaks
+                // Переносы строк
                 escaped = escaped.replace(/\n/g, '<br>');
 
-                // Find URLs and replace with truncated clickable links
+                // Замена URL на ссылки с текстом "https://..."
                 const urlRegex = /(https?:\/\/[^\s<>"'\]]+)/gi;
                 escaped = escaped.replace(urlRegex, (match) => {
-                    // Clean trailing punctuation that might have been caught
                     let cleanUrl = match.replace(/[.,;:!?)\]]+$/, '');
                     const trailing = match.slice(cleanUrl.length);
-                    const display = truncateUrl(cleanUrl);
-                    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${cleanUrl}">${display}</a>${trailing}`;
+                    const displayText = formatLinkDisplay(cleanUrl);
+                    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${cleanUrl}">${displayText}</a>${trailing}`;
                 });
 
                 return escaped;
             }
 
             // ──────────────────────────────────────
-            // Toast
+            // Уведомления
             // ──────────────────────────────────────
             let toastTimer;
-
             function showToast(msg) {
                 clearTimeout(toastTimer);
                 toast.textContent = msg;
@@ -892,11 +878,10 @@
             }
 
             // ──────────────────────────────────────
-            // Render
+            // Отрисовка списка
             // ──────────────────────────────────────
             function render() {
                 const sorted = getSortedItems();
-                // Clear dynamic content
                 const existingCards = listContainer.querySelectorAll('.card');
                 existingCards.forEach(c => c.remove());
 
@@ -907,8 +892,7 @@
                 } else {
                     emptyState.style.display = 'none';
                     listInfo.style.display = '';
-                    itemCount.textContent = sorted.length + ' ' + pluralize(sorted.length, 'пункт', 'пункта',
-                    'пунктов');
+                    itemCount.textContent = sorted.length + ' ' + pluralize(sorted.length, 'пункт', 'пункта', 'пунктов');
                     sorted.forEach(item => {
                         const card = createCardElement(item);
                         listContainer.appendChild(card);
@@ -923,13 +907,11 @@
 
             function createCardElement(item) {
                 const card = document.createElement('div');
-                card.className = 'card' + (selectionMode ? ' selection-mode' : '') + (selectedIds.has(item.id) ?
-                    ' selected' : '');
+                card.className = 'card' + (selectionMode ? ' selection-mode' : '') + (selectedIds.has(item.id) ? ' selected' : '');
                 card.dataset.itemId = item.id;
                 if (selectionMode) {
                     card.addEventListener('click', (e) => {
-                        if (e.target.closest('a') || e.target.closest('button') || e.target.closest(
-                                '.card-check')) return;
+                        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.card-check')) return;
                         toggleItemSelection(item.id);
                     });
                 }
@@ -964,7 +946,6 @@
                     </div>
                 `;
 
-                // Attach event listeners
                 const checkDiv = card.querySelector('.card-check');
                 checkDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1006,13 +987,11 @@
             }
 
             // ──────────────────────────────────────
-            // Selection
+            // Логика выделения
             // ──────────────────────────────────────
             function toggleSelectionMode() {
                 selectionMode = !selectionMode;
-                if (!selectionMode) {
-                    selectedIds.clear();
-                }
+                if (!selectionMode) selectedIds.clear();
                 updateSelectionModeUI();
                 render();
                 if (!selectionMode) {
@@ -1048,9 +1027,7 @@
                         card.classList.remove('selected');
                     }
                     const checkDiv = card.querySelector('.card-check');
-                    if (checkDiv) {
-                        checkDiv.textContent = selectedIds.has(id) ? '✓' : '';
-                    }
+                    if (checkDiv) checkDiv.textContent = selectedIds.has(id) ? '✓' : '';
                 }
                 updateSelectionModeUI();
                 updateSelectionBar();
@@ -1072,8 +1049,7 @@
                     return;
                 }
                 selectionBar.classList.add('visible');
-                selCount.textContent = 'Выбрано: ' + selectedIds.size + ' ' + pluralize(selectedIds.size, 'пункт', 'пункта',
-                    'пунктов');
+                selCount.textContent = 'Выбрано: ' + selectedIds.size + ' ' + pluralize(selectedIds.size, 'пункт', 'пункта', 'пунктов');
 
                 let totalMin = 0;
                 let totalMax = 0;
@@ -1114,7 +1090,7 @@
             }
 
             // ──────────────────────────────────────
-            // Modal
+            // Модальное окно
             // ──────────────────────────────────────
             function openAddModal() {
                 editingId = null;
@@ -1191,7 +1167,7 @@
             }
 
             // ──────────────────────────────────────
-            // Delete confirmation
+            // Удаление
             // ──────────────────────────────────────
             function confirmDelete(id) {
                 pendingDeleteId = id;
@@ -1216,7 +1192,7 @@
             }
 
             // ──────────────────────────────────────
-            // Sort toggle
+            // Сортировка
             // ──────────────────────────────────────
             function toggleSort() {
                 sortDesc = !sortDesc;
@@ -1226,18 +1202,15 @@
 
             function updateSortButton() {
                 btnSort.textContent = sortDesc ? '🔽 Приоритет' : '🔼 Приоритет';
-                btnSort.title = sortDesc ? 'Сортировка: высокий приоритет сверху' :
-                    'Сортировка: низкий приоритет сверху';
+                btnSort.title = sortDesc ? 'Сортировка: высокий приоритет сверху' : 'Сортировка: низкий приоритет сверху';
             }
 
             // ──────────────────────────────────────
-            // Event listeners
+            // Обработчики событий
             // ──────────────────────────────────────
             btnSelectMode.addEventListener('click', toggleSelectionMode);
             btnSort.addEventListener('click', toggleSort);
-            fabAdd.addEventListener('click', () => {
-                openAddModal();
-            });
+            fabAdd.addEventListener('click', openAddModal);
             btnClearSelection.addEventListener('click', clearSelection);
             btnCancel.addEventListener('click', closeModal);
             itemForm.addEventListener('submit', handleFormSubmit);
@@ -1247,24 +1220,17 @@
             modalOverlay.addEventListener('click', (e) => {
                 if (e.target === modalOverlay) closeModal();
             });
-
             confirmOverlay.addEventListener('click', (e) => {
                 if (e.target === confirmOverlay) cancelDelete();
             });
 
-            // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    if (modalOverlay.classList.contains('open')) {
-                        closeModal();
-                    } else if (confirmOverlay.classList.contains('open')) {
-                        cancelDelete();
-                    } else if (selectionMode) {
-                        toggleSelectionMode();
-                    }
+                    if (modalOverlay.classList.contains('open')) closeModal();
+                    else if (confirmOverlay.classList.contains('open')) cancelDelete();
+                    else if (selectionMode) toggleSelectionMode();
                 }
-                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList
-                    .contains('open')) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList.contains('open')) {
                     e.preventDefault();
                     items.forEach(it => selectedIds.add(it.id));
                     updateSelectionModeUI();
@@ -1275,23 +1241,19 @@
             });
 
             // ──────────────────────────────────────
-            // PWA Service Worker
+            // Service Worker (PWA)
             // ──────────────────────────────────────
             function registerSW() {
                 if ('serviceWorker' in navigator) {
                     const swPath = new URL('sw.js', location.href).href;
                     navigator.serviceWorker.register(swPath, { scope: './' })
-                        .then(reg => {
-                            console.log('Service Worker registered:', reg.scope);
-                        })
-                        .catch(err => {
-                            console.warn('Service Worker registration failed:', err);
-                        });
+                        .then(reg => console.log('Service Worker зарегистрирован:', reg.scope))
+                        .catch(err => console.warn('Ошибка регистрации Service Worker:', err));
                 }
             }
 
             // ──────────────────────────────────────
-            // Init
+            // Инициализация
             // ──────────────────────────────────────
             function init() {
                 loadItems();
@@ -1310,16 +1272,6 @@
             window.addEventListener('offline', () => showToast('📴 Вы офлайн (данные сохраняются локально)'));
 
             init();
-
-            console.log('🏗️ Планировщик ремонта готов!');
-            console.log('  • Добавляйте пункты кнопкой +');
-            console.log('  • Приоритет от 1 до 10 с дробной частью (5.4, 7.8)');
-            console.log('  • Цена: одиночная (15000) или диапазон (10000-20000)');
-            console.log('  • Ссылки в комментариях сокращаются (домен/путь...) и кликабельны');
-            console.log('  • Несколько ссылок отображаются каждая на своей строке');
-            console.log('  • Режим "Выбрать" для подсчёта общей суммы');
-            console.log('  • Данные сохраняются в памяти телефона');
-            console.log('  • Работает офлайн');
         })();
     </script>
 </body>
