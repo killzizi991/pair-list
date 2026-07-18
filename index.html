@@ -32,6 +32,7 @@
             --priority-low: #22c55e;
             --priority-mid: #eab308;
             --priority-high: #ef4444;
+            --link-color: #2563eb;
         }
 
         * {
@@ -302,15 +303,21 @@
             color: var(--text-secondary);
             line-height: 1.45;
             word-break: break-word;
+            /* Увеличиваем максимальное количество строк до 4, чтобы были видны несколько ссылок */
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 4;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
         .card-comment a {
-            color: #2563eb;
+            color: var(--link-color);
             text-decoration: underline;
             pointer-events: auto;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .card-comment a:active {
+            color: #1d4ed8;
         }
         .card-actions {
             display: flex;
@@ -465,7 +472,7 @@
             box-shadow: 0 0 0 3px rgba(232, 115, 74, 0.1);
         }
         .form-group textarea {
-            min-height: 70px;
+            min-height: 80px;
             resize: vertical;
         }
         .form-group .hint {
@@ -639,8 +646,8 @@
                 </div>
                 <div class="form-group">
                     <label for="itemComment">Комментарий (цвета, ссылки на магазины и т.д.)</label>
-                    <textarea id="itemComment" placeholder="Например: Нужен светло-серый оттенок. Ссылка: https://example.com/краска" maxlength="1000"></textarea>
-                    <span class="hint">Ссылки (https://...) будут кликабельны в списке</span>
+                    <textarea id="itemComment" placeholder="Например: Нужен светло-серый оттенок. Ссылка: https://example.com/краска" maxlength="2000"></textarea>
+                    <span class="hint">Ссылки (https://...) будут кликабельны и сокращены для экономии места. Можно вставлять несколько ссылок — каждая будет видна.</span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Сохранить</button>
@@ -815,10 +822,8 @@
             // Priority color
             // ──────────────────────────────────────
             function getPriorityColor(priority) {
-                // 1 = green, 5 = yellow, 10 = red
                 const t = (priority - 1) / 9; // 0 to 1
                 const clamped = Math.max(0, Math.min(1, t));
-                // HSL interpolation: hue from 120 (green) to 0 (red), via 60 (yellow)
                 let hue;
                 if (clamped <= 0.5) {
                     hue = 120 - clamped * 2 * 60; // 120 → 60
@@ -831,19 +836,47 @@
             }
 
             // ──────────────────────────────────────
-            // URL detection
+            // URL truncation for display
             // ──────────────────────────────────────
-            function linkifyUrls(text) {
-                // Escape HTML first
-                const escaped = text
+            function truncateUrl(url) {
+                // Remove protocol
+                let display = url.replace(/^https?:\/\//, '');
+                // Remove www.
+                display = display.replace(/^www\./, '');
+                // If still too long, truncate with ellipsis
+                const MAX_LEN = 28;
+                if (display.length > MAX_LEN) {
+                    display = display.substring(0, MAX_LEN - 3) + '...';
+                }
+                return display;
+            }
+
+            // ──────────────────────────────────────
+            // Comment formatting: newlines + clickable truncated links
+            // ──────────────────────────────────────
+            function formatComment(text) {
+                if (!text) return '';
+                // Escape HTML
+                let escaped = text
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;');
-                // Detect URLs
-                const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
-                return escaped.replace(urlRegex,
-                    '<a href="$1" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">$1</a>');
+
+                // Convert newlines to <br> for line breaks
+                escaped = escaped.replace(/\n/g, '<br>');
+
+                // Find URLs and replace with truncated clickable links
+                const urlRegex = /(https?:\/\/[^\s<>"'\]]+)/gi;
+                escaped = escaped.replace(urlRegex, (match) => {
+                    // Clean trailing punctuation that might have been caught
+                    let cleanUrl = match.replace(/[.,;:!?)\]]+$/, '');
+                    const trailing = match.slice(cleanUrl.length);
+                    const display = truncateUrl(cleanUrl);
+                    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${cleanUrl}">${display}</a>${trailing}`;
+                });
+
+                return escaped;
             }
 
             // ──────────────────────────────────────
@@ -895,7 +928,6 @@
                 card.dataset.itemId = item.id;
                 if (selectionMode) {
                     card.addEventListener('click', (e) => {
-                        // Don't toggle if clicking a link, button, or the checkbox area
                         if (e.target.closest('a') || e.target.closest('button') || e.target.closest(
                                 '.card-check')) return;
                         toggleItemSelection(item.id);
@@ -904,7 +936,7 @@
 
                 const priorityColor = getPriorityColor(item.priority);
                 const priceFormatted = formatPrice(item.priceMin, item.priceMax);
-                const commentHtml = item.comment ? linkifyUrls(item.comment) : '';
+                const commentHtml = formatComment(item.comment);
 
                 card.innerHTML = `
                     <div class="card-check" data-check-id="${item.id}">✓</div>
@@ -955,7 +987,6 @@
             }
 
             function formatPriority(p) {
-                // Show decimal only if needed
                 if (p === Math.floor(p)) return String(Math.floor(p));
                 return p.toFixed(1);
             }
@@ -1009,7 +1040,6 @@
                 } else {
                     selectedIds.add(id);
                 }
-                // Update card visually without full re-render
                 const card = listContainer.querySelector(`[data-item-id="${id}"]`);
                 if (card) {
                     if (selectedIds.has(id)) {
@@ -1032,7 +1062,6 @@
                 updateSelectionModeUI();
                 updateSelectionBar();
                 updateFabPosition();
-                // Update visual state of all cards
                 listContainer.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
                 listContainer.querySelectorAll('.card-check').forEach(c => c.textContent = '');
             }
@@ -1133,7 +1162,6 @@
                 const comment = itemComment.value.trim();
 
                 if (editingId) {
-                    // Edit existing
                     const idx = items.findIndex(it => it.id === editingId);
                     if (idx >= 0) {
                         items[idx].name = name;
@@ -1144,7 +1172,6 @@
                     }
                     showToast('✅ Пункт обновлён');
                 } else {
-                    // Add new
                     const newItem = {
                         id: generateId(),
                         name,
@@ -1209,9 +1236,6 @@
             btnSelectMode.addEventListener('click', toggleSelectionMode);
             btnSort.addEventListener('click', toggleSort);
             fabAdd.addEventListener('click', () => {
-                if (selectionMode && selectedIds.size > 0) {
-                    // If in selection mode with selections, FAB still adds new item
-                }
                 openAddModal();
             });
             btnClearSelection.addEventListener('click', clearSelection);
@@ -1220,12 +1244,10 @@
             confirmDeleteBtn.addEventListener('click', executeDelete);
             confirmCancelBtn.addEventListener('click', cancelDelete);
 
-            // Close modal on overlay click
             modalOverlay.addEventListener('click', (e) => {
                 if (e.target === modalOverlay) closeModal();
             });
 
-            // Close confirm on overlay click
             confirmOverlay.addEventListener('click', (e) => {
                 if (e.target === confirmOverlay) cancelDelete();
             });
@@ -1241,7 +1263,6 @@
                         toggleSelectionMode();
                     }
                 }
-                // Ctrl/Cmd + A in selection mode: select all
                 if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList
                     .contains('open')) {
                     e.preventDefault();
@@ -1258,7 +1279,6 @@
             // ──────────────────────────────────────
             function registerSW() {
                 if ('serviceWorker' in navigator) {
-                    // Determine scope for GitHub Pages
                     const swPath = new URL('sw.js', location.href).href;
                     navigator.serviceWorker.register(swPath, { scope: './' })
                         .then(reg => {
@@ -1279,7 +1299,6 @@
                 updateSortButton();
                 registerSW();
 
-                // Handle service worker updates
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         showToast('🔄 Приложение обновлено');
@@ -1287,20 +1306,17 @@
                 }
             }
 
-            // ──────────────────────────────────────
-            // Handle online/offline
-            // ──────────────────────────────────────
             window.addEventListener('online', () => showToast('🌐 Вы снова онлайн'));
             window.addEventListener('offline', () => showToast('📴 Вы офлайн (данные сохраняются локально)'));
 
-            // Start
             init();
 
             console.log('🏗️ Планировщик ремонта готов!');
             console.log('  • Добавляйте пункты кнопкой +');
             console.log('  • Приоритет от 1 до 10 с дробной частью (5.4, 7.8)');
             console.log('  • Цена: одиночная (15000) или диапазон (10000-20000)');
-            console.log('  • Ссылки в комментариях кликабельны');
+            console.log('  • Ссылки в комментариях сокращаются (домен/путь...) и кликабельны');
+            console.log('  • Несколько ссылок отображаются каждая на своей строке');
             console.log('  • Режим "Выбрать" для подсчёта общей суммы');
             console.log('  • Данные сохраняются в памяти телефона');
             console.log('  • Работает офлайн');
