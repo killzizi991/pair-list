@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#e8734a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Планировщик ремонта — расставляй приоритеты и считай бюджет">
+    <title>Планировщик ремонта</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #6b7280;
+            --accent: #e8734a;
+            --accent-dark: #c85d35;
+            --danger: #e74c3c;
+            --danger-bg: #fef2f2;
+            --border: #e5e7eb;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.15);
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --transition: 0.2s ease;
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+            --priority-low: #22c55e;
+            --priority-mid: #eab308;
+            --priority-high: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: calc(80px + var(--safe-bottom));
+            position: relative;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--card-bg);
+            padding: 14px 16px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: var(--text);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-title .icon {
+            font-size: 1.4rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 9px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: var(--transition);
+            white-space: nowrap;
+            min-height: 40px;
+            min-width: 40px;
+            font-family: var(--font);
+            letter-spacing: -0.1px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:active {
+            background: var(--accent-dark);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:active {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .btn-outline.active {
+            background: #fff7f4;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            min-height: 32px;
+            border-radius: 6px;
+        }
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 1.1rem;
+        }
+        .btn-danger-text {
+            background: transparent;
+            border: none;
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        /* Main list */
+        .main-container {
+            flex: 1;
+            padding: 12px 12px 20px;
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .empty-state .emoji {
+            font-size: 3.5rem;
+        }
+        .empty-state .title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .empty-state .subtitle {
+            font-size: 0.9rem;
+            max-width: 280px;
+            line-height: 1.4;
+        }
+        .list-info {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 14px 14px 14px 16px;
+            box-shadow: var(--shadow);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            position: relative;
+            cursor: default;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .card.selected {
+            border-color: var(--accent);
+            background: #fffaf8;
+            box-shadow: var(--shadow-lg);
+        }
+        .card.selection-mode {
+            cursor: pointer;
+        }
+        .card.selection-mode:active {
+            background: #fef9f7;
+        }
+        .card-check {
+            display: none;
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid #d1d5db;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #fff;
+            transition: var(--transition);
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        .selection-mode-active .card-check {
+            display: flex;
+        }
+        .card.selected .card-check {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .priority-badge {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #fff;
+            letter-spacing: -0.2px;
+            transition: transform 0.15s ease;
+        }
+        .card-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .card-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.3;
+            word-break: break-word;
+            color: var(--text);
+        }
+        .card-price {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .card-price.na {
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-style: italic;
+        }
+        .card-comment {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-comment a {
+            color: #2563eb;
+            text-decoration: underline;
+            pointer-events: auto;
+        }
+        .card-actions {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+            align-items: center;
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: calc(20px + var(--safe-bottom));
+            right: 20px;
+            z-index: 90;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-size: 1.6rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(232, 115, 74, 0.4);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .fab:active {
+            transform: scale(0.9);
+            background: var(--accent-dark);
+        }
+        .fab.shifted {
+            bottom: calc(90px + var(--safe-bottom));
+            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Bottom selection bar */
+        .selection-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 95;
+            background: var(--card-bg);
+            border-top: 2px solid var(--accent);
+            padding: 12px 16px calc(12px + var(--safe-bottom));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .selection-bar.visible {
+            transform: translateY(0);
+        }
+        .selection-bar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+        .selection-bar-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .selection-bar-total {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .selection-bar-total.range {
+            font-size: 0.9rem;
+        }
+
+        /* Modal overlay */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            max-height: 85dvh;
+            overflow-y: auto;
+            padding: 20px 18px calc(20px + var(--safe-bottom));
+            transform: translateY(30px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-lg);
+        }
+        .modal-overlay.open .modal {
+            transform: translateY(0);
+        }
+        .modal h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.2px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            transition: var(--transition);
+            background: #fafafa;
+            color: var(--text);
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(232, 115, 74, 0.1);
+        }
+        .form-group textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+        .form-group .hint {
+            font-size: 0.72rem;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+        .form-actions .btn {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            z-index: 300;
+            background: #1a1a2e;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            pointer-events: none;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Delete confirmation mini-modal */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 250;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .confirm-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .confirm-dialog {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            max-width: 320px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+        .confirm-dialog p {
+            margin-bottom: 14px;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .confirm-dialog .btn {
+            margin: 0 4px;
+        }
+
+        /* Responsive */
+        @media (min-width: 600px) {
+            .main-container {
+                padding: 16px 16px 24px;
+                gap: 12px;
+            }
+            .card {
+                padding: 16px 16px 16px 18px;
+            }
+            .modal {
+                border-radius: var(--radius-lg);
+                margin: auto;
+                max-height: 80vh;
+                align-self: center;
+            }
+            .modal-overlay {
+                align-items: center;
+            }
+            .fab {
+                right: 28px;
+                bottom: 28px;
+            }
+            .fab.shifted {
+                bottom: 100px;
+            }
+            .selection-bar {
+                padding: 14px 24px calc(14px + var(--safe-bottom));
+            }
+        }
+        @media (min-width: 768px) {
+            .main-container {
+                padding: 20px 0 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">
+            <span class="icon">🏗️</span> Ремонт
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline btn-sm" id="btnSelectMode" title="Выбрать несколько для подсчёта суммы">
+                ☑️ Выбрать
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnSort" title="Сортировка по приоритету">
+                🔽 Приоритет
+            </button>
+        </div>
+    </header>
+
+    <!-- Main list -->
+    <div class="main-container" id="listContainer">
+        <div class="empty-state" id="emptyState">
+            <span class="emoji">🛠️</span>
+            <span class="title">Список пуст</span>
+            <span class="subtitle">Нажмите кнопку <strong>+</strong> чтобы добавить первую задачу по ремонту</span>
+        </div>
+        <div class="list-info" id="listInfo" style="display:none;">
+            <span id="itemCount">0 пунктов</span>
+            <span style="color:#9ca3af;">Сортировка: по приоритету ↓</span>
+        </div>
+    </div>
+
+    <!-- FAB -->
+    <button class="fab" id="fabAdd" title="Добавить пункт">+</button>
+
+    <!-- Selection bar -->
+    <div class="selection-bar" id="selectionBar">
+        <div class="selection-bar-info">
+            <span class="selection-bar-count" id="selCount">Выбрано: 0</span>
+            <span class="selection-bar-total" id="selTotal">—</span>
+        </div>
+        <button class="btn btn-outline btn-sm" id="btnClearSelection">✕ Сбросить</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modal">
+            <h2 id="modalTitle">Добавить пункт</h2>
+            <form id="itemForm" autocomplete="off">
+                <div class="form-group">
+                    <label for="itemName">Название *</label>
+                    <input type="text" id="itemName" placeholder="Например: Покраска стен в спальне" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="itemPriority">Приоритет (1–10, можно дробный) *</label>
+                    <input type="number" id="itemPriority" step="0.1" min="1" max="10" placeholder="Например: 5.4 или 7.8" required>
+                    <span class="hint">Чем выше число — тем выше приоритет. Можно 5.4, 7.8 и т.д.</span>
+                </div>
+                <div class="form-group">
+                    <label for="itemPrice">Цена (одиночная или диапазон)</label>
+                    <input type="text" id="itemPrice" placeholder="Например: 15000 или 10000-20000" maxlength="80">
+                    <span class="hint">Оставьте пустым, если цена неизвестна. Для диапазона используйте дефис: 10000-20000</span>
+                </div>
+                <div class="form-group">
+                    <label for="itemComment">Комментарий (цвета, ссылки на магазины и т.д.)</label>
+                    <textarea id="itemComment" placeholder="Например: Нужен светло-серый оттенок. Ссылка: https://example.com/краска" maxlength="1000"></textarea>
+                    <span class="hint">Ссылки (https://...) будут кликабельны в списке</span>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+                    <button type="button" class="btn btn-outline" id="btnCancel">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete confirmation -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-dialog">
+            <p>Удалить этот пункт?</p>
+            <button class="btn btn-danger-text" id="confirmDelete">Да, удалить</button>
+            <button class="btn btn-outline btn-sm" id="confirmCancel">Отмена</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // ──────────────────────────────────────
+            // DOM elements
+            // ──────────────────────────────────────
+            const listContainer = document.getElementById('listContainer');
+            const emptyState = document.getElementById('emptyState');
+            const listInfo = document.getElementById('listInfo');
+            const itemCount = document.getElementById('itemCount');
+            const btnSelectMode = document.getElementById('btnSelectMode');
+            const btnSort = document.getElementById('btnSort');
+            const fabAdd = document.getElementById('fabAdd');
+            const selectionBar = document.getElementById('selectionBar');
+            const selCount = document.getElementById('selCount');
+            const selTotal = document.getElementById('selTotal');
+            const btnClearSelection = document.getElementById('btnClearSelection');
+            const modalOverlay = document.getElementById('modalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const itemForm = document.getElementById('itemForm');
+            const itemName = document.getElementById('itemName');
+            const itemPriority = document.getElementById('itemPriority');
+            const itemPrice = document.getElementById('itemPrice');
+            const itemComment = document.getElementById('itemComment');
+            const btnCancel = document.getElementById('btnCancel');
+            const confirmOverlay = document.getElementById('confirmOverlay');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+            const confirmCancelBtn = document.getElementById('confirmCancel');
+            const toast = document.getElementById('toast');
+
+            // ──────────────────────────────────────
+            // State
+            // ──────────────────────────────────────
+            const STORAGE_KEY = 'renovation_planner_items';
+            let items = [];
+            let selectedIds = new Set();
+            let selectionMode = false;
+            let editingId = null;
+            let pendingDeleteId = null;
+            let sortDesc = true; // true = high priority first
+
+            // ──────────────────────────────────────
+            // Persistence
+            // ──────────────────────────────────────
+            function loadItems() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) {
+                            items = parsed.map(it => ({
+                                id: it.id || generateId(),
+                                name: String(it.name || ''),
+                                priority: clampPriority(parseFloat(it.priority) || 5),
+                                priceMin: it.priceMin != null ? parseFloat(it.priceMin) : null,
+                                priceMax: it.priceMax != null ? parseFloat(it.priceMax) : null,
+                                comment: String(it.comment || ''),
+                                createdAt: it.createdAt || Date.now(),
+                            }));
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load items:', e);
+                }
+                items = [];
+            }
+
+            function saveItems() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+                } catch (e) {
+                    showToast('⚠️ Не удалось сохранить (память заполнена)');
+                }
+            }
+
+            function generateId() {
+                return 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+            }
+
+            function clampPriority(val) {
+                if (isNaN(val)) return 5;
+                return Math.max(1, Math.min(10, Math.round(val * 10) / 10));
+            }
+
+            // ──────────────────────────────────────
+            // Sorting
+            // ──────────────────────────────────────
+            function getSortedItems() {
+                const arr = [...items];
+                arr.sort((a, b) => {
+                    const diff = b.priority - a.priority;
+                    if (Math.abs(diff) > 0.001) return sortDesc ? diff : -diff;
+                    return b.createdAt - a.createdAt;
+                });
+                return arr;
+            }
+
+            // ──────────────────────────────────────
+            // Price parsing & formatting
+            // ──────────────────────────────────────
+            function parsePriceInput(raw) {
+                const trimmed = String(raw || '').trim().replace(/\s+/g, '');
+                if (!trimmed) return { min: null, max: null };
+                // Check for range: "10000-20000" or "10000 - 20000"
+                const rangeMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)$/);
+                if (rangeMatch) {
+                    const min = parseFloat(rangeMatch[1]);
+                    const max = parseFloat(rangeMatch[2]);
+                    if (!isNaN(min) && !isNaN(max) && min <= max) {
+                        return { min, max };
+                    }
+                    return { min: null, max: null };
+                }
+                // Single price
+                const single = parseFloat(trimmed);
+                if (!isNaN(single) && single >= 0) {
+                    return { min: single, max: single };
+                }
+                return { min: null, max: null };
+            }
+
+            function formatPrice(priceMin, priceMax) {
+                if (priceMin == null && priceMax == null) return null;
+                if (priceMin != null && priceMax != null && priceMin === priceMax) {
+                    return formatNumber(priceMin) + ' ₽';
+                }
+                if (priceMin != null && priceMax != null) {
+                    return formatNumber(priceMin) + ' – ' + formatNumber(priceMax) + ' ₽';
+                }
+                if (priceMin != null) return formatNumber(priceMin) + ' ₽';
+                if (priceMax != null) return formatNumber(priceMax) + ' ₽';
+                return null;
+            }
+
+            function formatNumber(n) {
+                if (n == null || isNaN(n)) return '—';
+                return Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ');
+            }
+
+            function priceInputFromItem(item) {
+                if (item.priceMin != null && item.priceMax != null) {
+                    if (item.priceMin === item.priceMax) return String(Math.round(item.priceMin));
+                    return Math.round(item.priceMin) + '-' + Math.round(item.priceMax);
+                }
+                if (item.priceMin != null) return String(Math.round(item.priceMin));
+                if (item.priceMax != null) return String(Math.round(item.priceMax));
+                return '';
+            }
+
+            // ──────────────────────────────────────
+            // Priority color
+            // ──────────────────────────────────────
+            function getPriorityColor(priority) {
+                // 1 = green, 5 = yellow, 10 = red
+                const t = (priority - 1) / 9; // 0 to 1
+                const clamped = Math.max(0, Math.min(1, t));
+                // HSL interpolation: hue from 120 (green) to 0 (red), via 60 (yellow)
+                let hue;
+                if (clamped <= 0.5) {
+                    hue = 120 - clamped * 2 * 60; // 120 → 60
+                } else {
+                    hue = 60 - (clamped - 0.5) * 2 * 60; // 60 → 0
+                }
+                const saturation = 75;
+                const lightness = 45;
+                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+            }
+
+            // ──────────────────────────────────────
+            // URL detection
+            // ──────────────────────────────────────
+            function linkifyUrls(text) {
+                // Escape HTML first
+                const escaped = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                // Detect URLs
+                const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+                return escaped.replace(urlRegex,
+                    '<a href="$1" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">$1</a>');
+            }
+
+            // ──────────────────────────────────────
+            // Toast
+            // ──────────────────────────────────────
+            let toastTimer;
+
+            function showToast(msg) {
+                clearTimeout(toastTimer);
+                toast.textContent = msg;
+                toast.classList.add('show');
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+
+            // ──────────────────────────────────────
+            // Render
+            // ──────────────────────────────────────
+            function render() {
+                const sorted = getSortedItems();
+                // Clear dynamic content
+                const existingCards = listContainer.querySelectorAll('.card');
+                existingCards.forEach(c => c.remove());
+
+                if (sorted.length === 0) {
+                    emptyState.style.display = '';
+                    listInfo.style.display = 'none';
+                    itemCount.textContent = '0 пунктов';
+                } else {
+                    emptyState.style.display = 'none';
+                    listInfo.style.display = '';
+                    itemCount.textContent = sorted.length + ' ' + pluralize(sorted.length, 'пункт', 'пункта',
+                    'пунктов');
+                    sorted.forEach(item => {
+                        const card = createCardElement(item);
+                        listContainer.appendChild(card);
+                    });
+                }
+
+                updateSelectionBar();
+                updateFabPosition();
+                updateSelectionModeUI();
+                updateSortButton();
+            }
+
+            function createCardElement(item) {
+                const card = document.createElement('div');
+                card.className = 'card' + (selectionMode ? ' selection-mode' : '') + (selectedIds.has(item.id) ?
+                    ' selected' : '');
+                card.dataset.itemId = item.id;
+                if (selectionMode) {
+                    card.addEventListener('click', (e) => {
+                        // Don't toggle if clicking a link, button, or the checkbox area
+                        if (e.target.closest('a') || e.target.closest('button') || e.target.closest(
+                                '.card-check')) return;
+                        toggleItemSelection(item.id);
+                    });
+                }
+
+                const priorityColor = getPriorityColor(item.priority);
+                const priceFormatted = formatPrice(item.priceMin, item.priceMax);
+                const commentHtml = item.comment ? linkifyUrls(item.comment) : '';
+
+                card.innerHTML = `
+                    <div class="card-check" data-check-id="${item.id}">✓</div>
+                    <div class="priority-badge" style="background:${priorityColor};" title="Приоритет: ${item.priority}">
+                        ${formatPriority(item.priority)}
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">${escapeHtml(item.name)}</div>
+                        ${priceFormatted
+                            ? `<div class="card-price">${priceFormatted}</div>`
+                            : `<div class="card-price na">Цена не указана</div>`
+                        }
+                        ${commentHtml
+                            ? `<div class="card-comment">${commentHtml}</div>`
+                            : ''
+                        }
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-outline btn-sm btn-edit" data-edit-id="${item.id}" title="Редактировать">
+                            ✏️
+                        </button>
+                        <button class="btn btn-danger-text btn-sm btn-delete" data-delete-id="${item.id}" title="Удалить">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+
+                // Attach event listeners
+                const checkDiv = card.querySelector('.card-check');
+                checkDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleItemSelection(item.id);
+                });
+
+                const editBtn = card.querySelector('.btn-edit');
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openEditModal(item);
+                });
+
+                const deleteBtn = card.querySelector('.btn-delete');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    confirmDelete(item.id);
+                });
+
+                return card;
+            }
+
+            function formatPriority(p) {
+                // Show decimal only if needed
+                if (p === Math.floor(p)) return String(Math.floor(p));
+                return p.toFixed(1);
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function pluralize(n, one, two, five) {
+                const mod10 = n % 10;
+                const mod100 = n % 100;
+                if (mod10 === 1 && mod100 !== 11) return one;
+                if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return two;
+                return five;
+            }
+
+            // ──────────────────────────────────────
+            // Selection
+            // ──────────────────────────────────────
+            function toggleSelectionMode() {
+                selectionMode = !selectionMode;
+                if (!selectionMode) {
+                    selectedIds.clear();
+                }
+                updateSelectionModeUI();
+                render();
+                if (!selectionMode) {
+                    updateSelectionBar();
+                    updateFabPosition();
+                }
+            }
+
+            function updateSelectionModeUI() {
+                if (selectionMode) {
+                    btnSelectMode.classList.add('active');
+                    btnSelectMode.textContent = '☑️ Выбрано: ' + selectedIds.size;
+                    listContainer.classList.add('selection-mode-active');
+                } else {
+                    btnSelectMode.classList.remove('active');
+                    btnSelectMode.textContent = '☑️ Выбрать';
+                    listContainer.classList.remove('selection-mode-active');
+                }
+            }
+
+            function toggleItemSelection(id) {
+                if (!selectionMode) return;
+                if (selectedIds.has(id)) {
+                    selectedIds.delete(id);
+                } else {
+                    selectedIds.add(id);
+                }
+                // Update card visually without full re-render
+                const card = listContainer.querySelector(`[data-item-id="${id}"]`);
+                if (card) {
+                    if (selectedIds.has(id)) {
+                        card.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                    const checkDiv = card.querySelector('.card-check');
+                    if (checkDiv) {
+                        checkDiv.textContent = selectedIds.has(id) ? '✓' : '';
+                    }
+                }
+                updateSelectionModeUI();
+                updateSelectionBar();
+                updateFabPosition();
+            }
+
+            function clearSelection() {
+                selectedIds.clear();
+                updateSelectionModeUI();
+                updateSelectionBar();
+                updateFabPosition();
+                // Update visual state of all cards
+                listContainer.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+                listContainer.querySelectorAll('.card-check').forEach(c => c.textContent = '');
+            }
+
+            function updateSelectionBar() {
+                if (!selectionMode || selectedIds.size === 0) {
+                    selectionBar.classList.remove('visible');
+                    return;
+                }
+                selectionBar.classList.add('visible');
+                selCount.textContent = 'Выбрано: ' + selectedIds.size + ' ' + pluralize(selectedIds.size, 'пункт', 'пункта',
+                    'пунктов');
+
+                let totalMin = 0;
+                let totalMax = 0;
+                let hasAnyPrice = false;
+                let allExact = true;
+
+                selectedIds.forEach(id => {
+                    const item = items.find(it => it.id === id);
+                    if (!item) return;
+                    if (item.priceMin != null || item.priceMax != null) {
+                        hasAnyPrice = true;
+                        const mn = item.priceMin != null ? item.priceMin : item.priceMax;
+                        const mx = item.priceMax != null ? item.priceMax : item.priceMin;
+                        totalMin += mn;
+                        totalMax += mx;
+                        if (mn !== mx) allExact = false;
+                    }
+                });
+
+                if (!hasAnyPrice) {
+                    selTotal.textContent = 'Цены не указаны';
+                    selTotal.classList.add('range');
+                } else if (allExact && totalMin === totalMax) {
+                    selTotal.textContent = 'Сумма: ' + formatNumber(totalMin) + ' ₽';
+                    selTotal.classList.remove('range');
+                } else {
+                    selTotal.textContent = 'Сумма: ' + formatNumber(totalMin) + ' – ' + formatNumber(totalMax) + ' ₽';
+                    selTotal.classList.add('range');
+                }
+            }
+
+            function updateFabPosition() {
+                if (selectionMode && selectedIds.size > 0 && selectionBar.classList.contains('visible')) {
+                    fabAdd.classList.add('shifted');
+                } else {
+                    fabAdd.classList.remove('shifted');
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Modal
+            // ──────────────────────────────────────
+            function openAddModal() {
+                editingId = null;
+                modalTitle.textContent = 'Добавить пункт';
+                itemForm.reset();
+                itemPriority.value = '5';
+                itemPrice.value = '';
+                itemComment.value = '';
+                modalOverlay.classList.add('open');
+                setTimeout(() => itemName.focus(), 300);
+            }
+
+            function openEditModal(item) {
+                editingId = item.id;
+                modalTitle.textContent = 'Редактировать пункт';
+                itemName.value = item.name;
+                itemPriority.value = item.priority;
+                itemPrice.value = priceInputFromItem(item);
+                itemComment.value = item.comment;
+                modalOverlay.classList.add('open');
+                setTimeout(() => itemName.focus(), 300);
+            }
+
+            function closeModal() {
+                modalOverlay.classList.remove('open');
+                editingId = null;
+                itemForm.reset();
+            }
+
+            function handleFormSubmit(e) {
+                e.preventDefault();
+                const name = itemName.value.trim();
+                if (!name) {
+                    showToast('⚠️ Введите название');
+                    itemName.focus();
+                    return;
+                }
+                const priority = clampPriority(parseFloat(itemPriority.value));
+                if (isNaN(priority) || priority < 1 || priority > 10) {
+                    showToast('⚠️ Приоритет должен быть от 1 до 10');
+                    itemPriority.focus();
+                    return;
+                }
+                const priceParsed = parsePriceInput(itemPrice.value);
+                const comment = itemComment.value.trim();
+
+                if (editingId) {
+                    // Edit existing
+                    const idx = items.findIndex(it => it.id === editingId);
+                    if (idx >= 0) {
+                        items[idx].name = name;
+                        items[idx].priority = priority;
+                        items[idx].priceMin = priceParsed.min;
+                        items[idx].priceMax = priceParsed.max;
+                        items[idx].comment = comment;
+                    }
+                    showToast('✅ Пункт обновлён');
+                } else {
+                    // Add new
+                    const newItem = {
+                        id: generateId(),
+                        name,
+                        priority,
+                        priceMin: priceParsed.min,
+                        priceMax: priceParsed.max,
+                        comment,
+                        createdAt: Date.now(),
+                    };
+                    items.push(newItem);
+                    showToast('✅ Пункт добавлен');
+                }
+
+                saveItems();
+                closeModal();
+                render();
+            }
+
+            // ──────────────────────────────────────
+            // Delete confirmation
+            // ──────────────────────────────────────
+            function confirmDelete(id) {
+                pendingDeleteId = id;
+                confirmOverlay.classList.add('open');
+            }
+
+            function executeDelete() {
+                if (pendingDeleteId) {
+                    items = items.filter(it => it.id !== pendingDeleteId);
+                    selectedIds.delete(pendingDeleteId);
+                    saveItems();
+                    render();
+                    showToast('🗑️ Пункт удалён');
+                }
+                pendingDeleteId = null;
+                confirmOverlay.classList.remove('open');
+            }
+
+            function cancelDelete() {
+                pendingDeleteId = null;
+                confirmOverlay.classList.remove('open');
+            }
+
+            // ──────────────────────────────────────
+            // Sort toggle
+            // ──────────────────────────────────────
+            function toggleSort() {
+                sortDesc = !sortDesc;
+                updateSortButton();
+                render();
+            }
+
+            function updateSortButton() {
+                btnSort.textContent = sortDesc ? '🔽 Приоритет' : '🔼 Приоритет';
+                btnSort.title = sortDesc ? 'Сортировка: высокий приоритет сверху' :
+                    'Сортировка: низкий приоритет сверху';
+            }
+
+            // ──────────────────────────────────────
+            // Event listeners
+            // ──────────────────────────────────────
+            btnSelectMode.addEventListener('click', toggleSelectionMode);
+            btnSort.addEventListener('click', toggleSort);
+            fabAdd.addEventListener('click', () => {
+                if (selectionMode && selectedIds.size > 0) {
+                    // If in selection mode with selections, FAB still adds new item
+                }
+                openAddModal();
+            });
+            btnClearSelection.addEventListener('click', clearSelection);
+            btnCancel.addEventListener('click', closeModal);
+            itemForm.addEventListener('submit', handleFormSubmit);
+            confirmDeleteBtn.addEventListener('click', executeDelete);
+            confirmCancelBtn.addEventListener('click', cancelDelete);
+
+            // Close modal on overlay click
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+
+            // Close confirm on overlay click
+            confirmOverlay.addEventListener('click', (e) => {
+                if (e.target === confirmOverlay) cancelDelete();
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (modalOverlay.classList.contains('open')) {
+                        closeModal();
+                    } else if (confirmOverlay.classList.contains('open')) {
+                        cancelDelete();
+                    } else if (selectionMode) {
+                        toggleSelectionMode();
+                    }
+                }
+                // Ctrl/Cmd + A in selection mode: select all
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList
+                    .contains('open')) {
+                    e.preventDefault();
+                    items.forEach(it => selectedIds.add(it.id));
+                    updateSelectionModeUI();
+                    updateSelectionBar();
+                    updateFabPosition();
+                    render();
+                }
+            });
+
+            // ──────────────────────────────────────
+            // PWA Service Worker
+            // ──────────────────────────────────────
+            function registerSW() {
+                if ('serviceWorker' in navigator) {
+                    // Determine scope for GitHub Pages
+                    const swPath = new URL('sw.js', location.href).href;
+                    navigator.serviceWorker.register(swPath, { scope: './' })
+                        .then(reg => {
+                            console.log('Service Worker registered:', reg.scope);
+                        })
+                        .catch(err => {
+                            console.warn('Service Worker registration failed:', err);
+                        });
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Init
+            // ──────────────────────────────────────
+            function init() {
+                loadItems();
+                render();
+                updateSortButton();
+                registerSW();
+
+                // Handle service worker updates
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        showToast('🔄 Приложение обновлено');
+                    });
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Handle online/offline
+            // ──────────────────────────────────────
+            window.addEventListener('online', () => showToast('🌐 Вы снова онлайн'));
+            window.addEventListener('offline', () => showToast('📴 Вы офлайн (данные сохраняются локально)'));
+
+            // Start
+            init();
+
+            console.log('🏗️ Планировщик ремонта готов!');
+            console.log('  • Добавляйте пункты кнопкой +');
+            console.log('  • Приоритет от 1 до 10 с дробной частью (5.4, 7.8)');
+            console.log('  • Цена: одиночная (15000) или диапазон (10000-20000)');
+            console.log('  • Ссылки в комментариях кликабельны');
+            console.log('  • Режим "Выбрать" для подсчёта общей суммы');
+            console.log('  • Данные сохраняются в памяти телефона');
+            console.log('  • Работает офлайн');
+        })();
+    </script>
+</body>
+</html>
