@@ -29,9 +29,7 @@
             --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --transition: 0.2s ease;
             --safe-bottom: env(safe-area-inset-bottom, 16px);
-            --priority-low: #22c55e;
-            --priority-mid: #eab308;
-            --priority-high: #ef4444;
+            --link-color: #2563eb;
         }
 
         * {
@@ -61,7 +59,7 @@
             -webkit-user-select: none;
         }
 
-        /* Header */
+        /* Заголовок */
         .header {
             position: sticky;
             top: 0;
@@ -90,8 +88,22 @@
         }
         .header-actions {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+        .header-total {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+            background: #fff7f4;
+            padding: 4px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            border: 1px solid #fcd9cc;
+            max-width: 160px;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
         .btn {
             display: inline-flex;
@@ -157,7 +169,7 @@
             font-weight: 500;
         }
 
-        /* Main list */
+        /* Основной список */
         .main-container {
             flex: 1;
             padding: 12px 12px 20px;
@@ -201,7 +213,7 @@
             align-items: center;
         }
 
-        /* Card */
+        /* Карточка задачи */
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
@@ -272,6 +284,8 @@
             color: #fff;
             letter-spacing: -0.2px;
             transition: transform 0.15s ease;
+            cursor: pointer;
+            touch-action: manipulation;
         }
         .card-content {
             flex: 1;
@@ -297,20 +311,44 @@
             font-weight: 400;
             font-style: italic;
         }
+        .card-comment-wrapper {
+            position: relative;
+        }
         .card-comment {
             font-size: 0.8rem;
             color: var(--text-secondary);
             line-height: 1.45;
             word-break: break-word;
+        }
+        .card-comment.clamped {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
         .card-comment a {
-            color: #2563eb;
+            color: var(--link-color);
             text-decoration: underline;
             pointer-events: auto;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .card-comment a:active {
+            color: #1d4ed8;
+        }
+        .card-comment-toggle {
+            font-size: 0.75rem;
+            color: var(--accent);
+            background: none;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 0;
+            display: none;
+            margin-top: 2px;
+        }
+        .card-comment-toggle.visible {
+            display: inline-block;
         }
         .card-actions {
             display: flex;
@@ -319,7 +357,7 @@
             align-items: center;
         }
 
-        /* FAB */
+        /* Кнопка добавления */
         .fab {
             position: fixed;
             bottom: calc(20px + var(--safe-bottom));
@@ -350,7 +388,7 @@
             transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Bottom selection bar */
+        /* Панель выделения */
         .selection-bar {
             position: fixed;
             bottom: 0;
@@ -393,7 +431,7 @@
             font-size: 0.9rem;
         }
 
-        /* Modal overlay */
+        /* Модальное окно */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -465,7 +503,7 @@
             box-shadow: 0 0 0 3px rgba(232, 115, 74, 0.1);
         }
         .form-group textarea {
-            min-height: 70px;
+            min-height: 80px;
             resize: vertical;
         }
         .form-group .hint {
@@ -484,7 +522,7 @@
             min-width: 100px;
         }
 
-        /* Toast */
+        /* Уведомление */
         .toast {
             position: fixed;
             top: 16px;
@@ -505,7 +543,7 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* Delete confirmation mini-modal */
+        /* Подтверждение удаления */
         .confirm-overlay {
             position: fixed;
             inset: 0;
@@ -540,7 +578,7 @@
             margin: 0 4px;
         }
 
-        /* Responsive */
+        /* Адаптивность */
         @media (min-width: 600px) {
             .main-container {
                 padding: 16px 16px 24px;
@@ -578,12 +616,13 @@
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Шапка -->
     <header class="header">
         <div class="header-title">
             <span class="icon">🏗️</span> Ремонт
         </div>
         <div class="header-actions">
+            <span id="headerTotal" class="header-total" style="display:none;"></span>
             <button class="btn btn-outline btn-sm" id="btnSelectMode" title="Выбрать несколько для подсчёта суммы">
                 ☑️ Выбрать
             </button>
@@ -593,7 +632,7 @@
         </div>
     </header>
 
-    <!-- Main list -->
+    <!-- Список задач -->
     <div class="main-container" id="listContainer">
         <div class="empty-state" id="emptyState">
             <span class="emoji">🛠️</span>
@@ -606,10 +645,10 @@
         </div>
     </div>
 
-    <!-- FAB -->
+    <!-- Кнопка добавления -->
     <button class="fab" id="fabAdd" title="Добавить пункт">+</button>
 
-    <!-- Selection bar -->
+    <!-- Панель выделения -->
     <div class="selection-bar" id="selectionBar">
         <div class="selection-bar-info">
             <span class="selection-bar-count" id="selCount">Выбрано: 0</span>
@@ -618,7 +657,7 @@
         <button class="btn btn-outline btn-sm" id="btnClearSelection">✕ Сбросить</button>
     </div>
 
-    <!-- Modal -->
+    <!-- Модальное окно -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal" id="modal">
             <h2 id="modalTitle">Добавить пункт</h2>
@@ -639,8 +678,8 @@
                 </div>
                 <div class="form-group">
                     <label for="itemComment">Комментарий (цвета, ссылки на магазины и т.д.)</label>
-                    <textarea id="itemComment" placeholder="Например: Нужен светло-серый оттенок. Ссылка: https://example.com/краска" maxlength="1000"></textarea>
-                    <span class="hint">Ссылки (https://...) будут кликабельны в списке</span>
+                    <textarea id="itemComment" placeholder="Например размер и ссылки" maxlength="2000"></textarea>
+                    <span class="hint">Ссылки будут показываться как https://... , но останутся кликабельными.</span>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Сохранить</button>
@@ -650,7 +689,7 @@
         </div>
     </div>
 
-    <!-- Delete confirmation -->
+    <!-- Подтверждение удаления -->
     <div class="confirm-overlay" id="confirmOverlay">
         <div class="confirm-dialog">
             <p>Удалить этот пункт?</p>
@@ -659,13 +698,13 @@
         </div>
     </div>
 
-    <!-- Toast -->
+    <!-- Уведомление -->
     <div class="toast" id="toast"></div>
 
     <script>
         (function() {
             // ──────────────────────────────────────
-            // DOM elements
+            // DOM-элементы
             // ──────────────────────────────────────
             const listContainer = document.getElementById('listContainer');
             const emptyState = document.getElementById('emptyState');
@@ -690,9 +729,10 @@
             const confirmDeleteBtn = document.getElementById('confirmDelete');
             const confirmCancelBtn = document.getElementById('confirmCancel');
             const toast = document.getElementById('toast');
+            const headerTotal = document.getElementById('headerTotal');
 
             // ──────────────────────────────────────
-            // State
+            // Состояние приложения
             // ──────────────────────────────────────
             const STORAGE_KEY = 'renovation_planner_items';
             let items = [];
@@ -700,10 +740,10 @@
             let selectionMode = false;
             let editingId = null;
             let pendingDeleteId = null;
-            let sortDesc = true; // true = high priority first
+            let sortDesc = true;
 
             // ──────────────────────────────────────
-            // Persistence
+            // Работа с localStorage
             // ──────────────────────────────────────
             function loadItems() {
                 try {
@@ -724,7 +764,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('Failed to load items:', e);
+                    console.warn('Ошибка загрузки данных:', e);
                 }
                 items = [];
             }
@@ -747,7 +787,7 @@
             }
 
             // ──────────────────────────────────────
-            // Sorting
+            // Сортировка
             // ──────────────────────────────────────
             function getSortedItems() {
                 const arr = [...items];
@@ -760,12 +800,11 @@
             }
 
             // ──────────────────────────────────────
-            // Price parsing & formatting
+            // Парсинг и форматирование цены
             // ──────────────────────────────────────
             function parsePriceInput(raw) {
                 const trimmed = String(raw || '').trim().replace(/\s+/g, '');
                 if (!trimmed) return { min: null, max: null };
-                // Check for range: "10000-20000" or "10000 - 20000"
                 const rangeMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*[-–—]\s*(\d+(?:\.\d+)?)$/);
                 if (rangeMatch) {
                     const min = parseFloat(rangeMatch[1]);
@@ -775,7 +814,6 @@
                     }
                     return { min: null, max: null };
                 }
-                // Single price
                 const single = parseFloat(trimmed);
                 if (!isNaN(single) && single >= 0) {
                     return { min: single, max: single };
@@ -812,45 +850,55 @@
             }
 
             // ──────────────────────────────────────
-            // Priority color
+            // Цвет приоритета
             // ──────────────────────────────────────
             function getPriorityColor(priority) {
-                // 1 = green, 5 = yellow, 10 = red
-                const t = (priority - 1) / 9; // 0 to 1
+                const t = (priority - 1) / 9;
                 const clamped = Math.max(0, Math.min(1, t));
-                // HSL interpolation: hue from 120 (green) to 0 (red), via 60 (yellow)
                 let hue;
                 if (clamped <= 0.5) {
-                    hue = 120 - clamped * 2 * 60; // 120 → 60
+                    hue = 120 - clamped * 2 * 60;
                 } else {
-                    hue = 60 - (clamped - 0.5) * 2 * 60; // 60 → 0
+                    hue = 60 - (clamped - 0.5) * 2 * 60;
                 }
-                const saturation = 75;
-                const lightness = 45;
-                return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                return `hsl(${hue}, 75%, 45%)`;
             }
 
             // ──────────────────────────────────────
-            // URL detection
+            // Отображение ссылки как https://...
             // ──────────────────────────────────────
-            function linkifyUrls(text) {
-                // Escape HTML first
-                const escaped = text
+            function formatLinkDisplay(url) {
+                return 'https://...';
+            }
+
+            // ──────────────────────────────────────
+            // Форматирование комментария
+            // ──────────────────────────────────────
+            function formatComment(text) {
+                if (!text) return '';
+                let escaped = text
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;');
-                // Detect URLs
-                const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
-                return escaped.replace(urlRegex,
-                    '<a href="$1" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();">$1</a>');
+
+                escaped = escaped.replace(/\n/g, '<br>');
+
+                const urlRegex = /(https?:\/\/[^\s<>"'\]]+)/gi;
+                escaped = escaped.replace(urlRegex, (match) => {
+                    let cleanUrl = match.replace(/[.,;:!?)\]]+$/, '');
+                    const trailing = match.slice(cleanUrl.length);
+                    const displayText = formatLinkDisplay(cleanUrl);
+                    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" title="${cleanUrl}">${displayText}</a>${trailing}`;
+                });
+
+                return escaped;
             }
 
             // ──────────────────────────────────────
-            // Toast
+            // Уведомления
             // ──────────────────────────────────────
             let toastTimer;
-
             function showToast(msg) {
                 clearTimeout(toastTimer);
                 toast.textContent = msg;
@@ -859,11 +907,42 @@
             }
 
             // ──────────────────────────────────────
-            // Render
+            // Обновление общей суммы в шапке
+            // ──────────────────────────────────────
+            function updateHeaderTotal() {
+                let totalMin = 0;
+                let totalMax = 0;
+                let hasPrice = false;
+                let allExact = true;
+
+                items.forEach(item => {
+                    if (item.priceMin != null || item.priceMax != null) {
+                        hasPrice = true;
+                        const mn = item.priceMin != null ? item.priceMin : item.priceMax;
+                        const mx = item.priceMax != null ? item.priceMax : item.priceMin;
+                        totalMin += mn;
+                        totalMax += mx;
+                        if (mn !== mx) allExact = false;
+                    }
+                });
+
+                if (!hasPrice) {
+                    headerTotal.style.display = 'none';
+                } else {
+                    headerTotal.style.display = '';
+                    if (allExact && totalMin === totalMax) {
+                        headerTotal.textContent = formatNumber(totalMin) + ' ₽';
+                    } else {
+                        headerTotal.textContent = formatNumber(totalMin) + ' – ' + formatNumber(totalMax) + ' ₽';
+                    }
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Отрисовка списка
             // ──────────────────────────────────────
             function render() {
                 const sorted = getSortedItems();
-                // Clear dynamic content
                 const existingCards = listContainer.querySelectorAll('.card');
                 existingCards.forEach(c => c.remove());
 
@@ -874,41 +953,42 @@
                 } else {
                     emptyState.style.display = 'none';
                     listInfo.style.display = '';
-                    itemCount.textContent = sorted.length + ' ' + pluralize(sorted.length, 'пункт', 'пункта',
-                    'пунктов');
+                    itemCount.textContent = sorted.length + ' ' + pluralize(sorted.length, 'пункт', 'пункта', 'пунктов');
                     sorted.forEach(item => {
                         const card = createCardElement(item);
                         listContainer.appendChild(card);
                     });
                 }
 
+                // Инициализация переключателей комментариев после вставки в DOM
+                initCommentToggles();
+
                 updateSelectionBar();
                 updateFabPosition();
                 updateSelectionModeUI();
                 updateSortButton();
+                updateHeaderTotal();
             }
 
             function createCardElement(item) {
                 const card = document.createElement('div');
-                card.className = 'card' + (selectionMode ? ' selection-mode' : '') + (selectedIds.has(item.id) ?
-                    ' selected' : '');
+                card.className = 'card' + (selectionMode ? ' selection-mode' : '') + (selectedIds.has(item.id) ? ' selected' : '');
                 card.dataset.itemId = item.id;
                 if (selectionMode) {
                     card.addEventListener('click', (e) => {
-                        // Don't toggle if clicking a link, button, or the checkbox area
-                        if (e.target.closest('a') || e.target.closest('button') || e.target.closest(
-                                '.card-check')) return;
+                        if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.card-check') || e.target.closest('.priority-badge')) return;
                         toggleItemSelection(item.id);
                     });
                 }
 
                 const priorityColor = getPriorityColor(item.priority);
                 const priceFormatted = formatPrice(item.priceMin, item.priceMax);
-                const commentHtml = item.comment ? linkifyUrls(item.comment) : '';
+                const commentHtml = formatComment(item.comment);
+                const hasComment = item.comment && item.comment.trim().length > 0;
 
                 card.innerHTML = `
                     <div class="card-check" data-check-id="${item.id}">✓</div>
-                    <div class="priority-badge" style="background:${priorityColor};" title="Приоритет: ${item.priority}">
+                    <div class="priority-badge" style="background:${priorityColor};" title="Приоритет: ${item.priority} (долгое нажатие — изменить)">
                         ${formatPriority(item.priority)}
                     </div>
                     <div class="card-content">
@@ -917,8 +997,11 @@
                             ? `<div class="card-price">${priceFormatted}</div>`
                             : `<div class="card-price na">Цена не указана</div>`
                         }
-                        ${commentHtml
-                            ? `<div class="card-comment">${commentHtml}</div>`
+                        ${hasComment
+                            ? `<div class="card-comment-wrapper">
+                                <div class="card-comment clamped">${commentHtml}</div>
+                                <button class="card-comment-toggle">ещё</button>
+                               </div>`
                             : ''
                         }
                     </div>
@@ -932,7 +1015,31 @@
                     </div>
                 `;
 
-                // Attach event listeners
+                // Обработчик долгого нажатия на приоритет
+                const badge = card.querySelector('.priority-badge');
+                if (badge) {
+                    let pressTimer;
+                    const longPressDuration = 500;
+
+                    function startPress(e) {
+                        pressTimer = setTimeout(() => {
+                            handlePriorityLongPress(item, badge);
+                        }, longPressDuration);
+                    }
+
+                    function cancelPress() {
+                        clearTimeout(pressTimer);
+                    }
+
+                    badge.addEventListener('mousedown', startPress);
+                    badge.addEventListener('touchstart', startPress, { passive: true });
+                    badge.addEventListener('mouseup', cancelPress);
+                    badge.addEventListener('mouseleave', cancelPress);
+                    badge.addEventListener('touchend', cancelPress);
+                    badge.addEventListener('touchcancel', cancelPress);
+                    badge.addEventListener('touchmove', cancelPress);
+                }
+
                 const checkDiv = card.querySelector('.card-check');
                 checkDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -954,8 +1061,61 @@
                 return card;
             }
 
+            function handlePriorityLongPress(item, badgeElement) {
+                // Запрашиваем новое значение приоритета через prompt
+                const current = item.priority;
+                const input = prompt(`Новый приоритет для "${item.name}" (1-10, можно дробный)`, current);
+                if (input !== null) {
+                    const newPriority = clampPriority(parseFloat(input));
+                    if (!isNaN(newPriority)) {
+                        item.priority = newPriority;
+                        saveItems();
+                        render(); // перерисовываем, чтобы обновить цвет и порядок
+                        showToast('🔢 Приоритет обновлён');
+                    } else {
+                        showToast('⚠️ Некорректное значение');
+                    }
+                }
+            }
+
+            function initCommentToggles() {
+                const wrappers = listContainer.querySelectorAll('.card-comment-wrapper');
+                wrappers.forEach(wrapper => {
+                    const commentDiv = wrapper.querySelector('.card-comment');
+                    const toggleBtn = wrapper.querySelector('.card-comment-toggle');
+                    if (!commentDiv || !toggleBtn) return;
+
+                    // Проверяем, нужно ли показывать кнопку "ещё"
+                    const isOverflowing = commentDiv.scrollHeight > commentDiv.clientHeight;
+                    if (isOverflowing) {
+                        toggleBtn.classList.add('visible');
+                        toggleBtn.textContent = 'ещё';
+                        // Убедимся, что класс clamped установлен
+                        commentDiv.classList.add('clamped');
+                    } else {
+                        toggleBtn.classList.remove('visible');
+                        commentDiv.classList.remove('clamped');
+                    }
+
+                    // Назначаем обработчик клика, если ещё не назначен
+                    if (!toggleBtn._listenerAttached) {
+                        toggleBtn._listenerAttached = true;
+                        toggleBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const isClamped = commentDiv.classList.contains('clamped');
+                            if (isClamped) {
+                                commentDiv.classList.remove('clamped');
+                                toggleBtn.textContent = 'свернуть';
+                            } else {
+                                commentDiv.classList.add('clamped');
+                                toggleBtn.textContent = 'ещё';
+                            }
+                        });
+                    }
+                });
+            }
+
             function formatPriority(p) {
-                // Show decimal only if needed
                 if (p === Math.floor(p)) return String(Math.floor(p));
                 return p.toFixed(1);
             }
@@ -975,13 +1135,11 @@
             }
 
             // ──────────────────────────────────────
-            // Selection
+            // Логика выделения
             // ──────────────────────────────────────
             function toggleSelectionMode() {
                 selectionMode = !selectionMode;
-                if (!selectionMode) {
-                    selectedIds.clear();
-                }
+                if (!selectionMode) selectedIds.clear();
                 updateSelectionModeUI();
                 render();
                 if (!selectionMode) {
@@ -1009,7 +1167,6 @@
                 } else {
                     selectedIds.add(id);
                 }
-                // Update card visually without full re-render
                 const card = listContainer.querySelector(`[data-item-id="${id}"]`);
                 if (card) {
                     if (selectedIds.has(id)) {
@@ -1018,9 +1175,7 @@
                         card.classList.remove('selected');
                     }
                     const checkDiv = card.querySelector('.card-check');
-                    if (checkDiv) {
-                        checkDiv.textContent = selectedIds.has(id) ? '✓' : '';
-                    }
+                    if (checkDiv) checkDiv.textContent = selectedIds.has(id) ? '✓' : '';
                 }
                 updateSelectionModeUI();
                 updateSelectionBar();
@@ -1032,7 +1187,6 @@
                 updateSelectionModeUI();
                 updateSelectionBar();
                 updateFabPosition();
-                // Update visual state of all cards
                 listContainer.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
                 listContainer.querySelectorAll('.card-check').forEach(c => c.textContent = '');
             }
@@ -1043,8 +1197,7 @@
                     return;
                 }
                 selectionBar.classList.add('visible');
-                selCount.textContent = 'Выбрано: ' + selectedIds.size + ' ' + pluralize(selectedIds.size, 'пункт', 'пункта',
-                    'пунктов');
+                selCount.textContent = 'Выбрано: ' + selectedIds.size + ' ' + pluralize(selectedIds.size, 'пункт', 'пункта', 'пунктов');
 
                 let totalMin = 0;
                 let totalMax = 0;
@@ -1085,7 +1238,7 @@
             }
 
             // ──────────────────────────────────────
-            // Modal
+            // Модальное окно
             // ──────────────────────────────────────
             function openAddModal() {
                 editingId = null;
@@ -1133,7 +1286,6 @@
                 const comment = itemComment.value.trim();
 
                 if (editingId) {
-                    // Edit existing
                     const idx = items.findIndex(it => it.id === editingId);
                     if (idx >= 0) {
                         items[idx].name = name;
@@ -1144,7 +1296,6 @@
                     }
                     showToast('✅ Пункт обновлён');
                 } else {
-                    // Add new
                     const newItem = {
                         id: generateId(),
                         name,
@@ -1164,7 +1315,7 @@
             }
 
             // ──────────────────────────────────────
-            // Delete confirmation
+            // Удаление
             // ──────────────────────────────────────
             function confirmDelete(id) {
                 pendingDeleteId = id;
@@ -1189,7 +1340,7 @@
             }
 
             // ──────────────────────────────────────
-            // Sort toggle
+            // Сортировка
             // ──────────────────────────────────────
             function toggleSort() {
                 sortDesc = !sortDesc;
@@ -1199,51 +1350,35 @@
 
             function updateSortButton() {
                 btnSort.textContent = sortDesc ? '🔽 Приоритет' : '🔼 Приоритет';
-                btnSort.title = sortDesc ? 'Сортировка: высокий приоритет сверху' :
-                    'Сортировка: низкий приоритет сверху';
+                btnSort.title = sortDesc ? 'Сортировка: высокий приоритет сверху' : 'Сортировка: низкий приоритет сверху';
             }
 
             // ──────────────────────────────────────
-            // Event listeners
+            // Обработчики событий
             // ──────────────────────────────────────
             btnSelectMode.addEventListener('click', toggleSelectionMode);
             btnSort.addEventListener('click', toggleSort);
-            fabAdd.addEventListener('click', () => {
-                if (selectionMode && selectedIds.size > 0) {
-                    // If in selection mode with selections, FAB still adds new item
-                }
-                openAddModal();
-            });
+            fabAdd.addEventListener('click', openAddModal);
             btnClearSelection.addEventListener('click', clearSelection);
             btnCancel.addEventListener('click', closeModal);
             itemForm.addEventListener('submit', handleFormSubmit);
             confirmDeleteBtn.addEventListener('click', executeDelete);
             confirmCancelBtn.addEventListener('click', cancelDelete);
 
-            // Close modal on overlay click
             modalOverlay.addEventListener('click', (e) => {
                 if (e.target === modalOverlay) closeModal();
             });
-
-            // Close confirm on overlay click
             confirmOverlay.addEventListener('click', (e) => {
                 if (e.target === confirmOverlay) cancelDelete();
             });
 
-            // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    if (modalOverlay.classList.contains('open')) {
-                        closeModal();
-                    } else if (confirmOverlay.classList.contains('open')) {
-                        cancelDelete();
-                    } else if (selectionMode) {
-                        toggleSelectionMode();
-                    }
+                    if (modalOverlay.classList.contains('open')) closeModal();
+                    else if (confirmOverlay.classList.contains('open')) cancelDelete();
+                    else if (selectionMode) toggleSelectionMode();
                 }
-                // Ctrl/Cmd + A in selection mode: select all
-                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList
-                    .contains('open')) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'a' && selectionMode && !modalOverlay.classList.contains('open')) {
                     e.preventDefault();
                     items.forEach(it => selectedIds.add(it.id));
                     updateSelectionModeUI();
@@ -1254,32 +1389,27 @@
             });
 
             // ──────────────────────────────────────
-            // PWA Service Worker
+            // Service Worker (PWA)
             // ──────────────────────────────────────
             function registerSW() {
                 if ('serviceWorker' in navigator) {
-                    // Determine scope for GitHub Pages
                     const swPath = new URL('sw.js', location.href).href;
                     navigator.serviceWorker.register(swPath, { scope: './' })
-                        .then(reg => {
-                            console.log('Service Worker registered:', reg.scope);
-                        })
-                        .catch(err => {
-                            console.warn('Service Worker registration failed:', err);
-                        });
+                        .then(reg => console.log('Service Worker зарегистрирован:', reg.scope))
+                        .catch(err => console.warn('Ошибка регистрации Service Worker:', err));
                 }
             }
 
             // ──────────────────────────────────────
-            // Init
+            // Инициализация
             // ──────────────────────────────────────
             function init() {
                 loadItems();
                 render();
                 updateSortButton();
+                updateHeaderTotal();
                 registerSW();
 
-                // Handle service worker updates
                 if ('serviceWorker' in navigator) {
                     navigator.serviceWorker.addEventListener('controllerchange', () => {
                         showToast('🔄 Приложение обновлено');
@@ -1287,23 +1417,10 @@
                 }
             }
 
-            // ──────────────────────────────────────
-            // Handle online/offline
-            // ──────────────────────────────────────
             window.addEventListener('online', () => showToast('🌐 Вы снова онлайн'));
             window.addEventListener('offline', () => showToast('📴 Вы офлайн (данные сохраняются локально)'));
 
-            // Start
             init();
-
-            console.log('🏗️ Планировщик ремонта готов!');
-            console.log('  • Добавляйте пункты кнопкой +');
-            console.log('  • Приоритет от 1 до 10 с дробной частью (5.4, 7.8)');
-            console.log('  • Цена: одиночная (15000) или диапазон (10000-20000)');
-            console.log('  • Ссылки в комментариях кликабельны');
-            console.log('  • Режим "Выбрать" для подсчёта общей суммы');
-            console.log('  • Данные сохраняются в памяти телефона');
-            console.log('  • Работает офлайн');
         })();
     </script>
 </body>
